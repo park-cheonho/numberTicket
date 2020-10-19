@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<typeAliases>
+		<typeAlias type="kr.ac.kopo.board.vo.BoardVO" alias="boardVO"/>
+		
+		<typeAlias type="kr.ac.kopo.reply.vo.ReplyVO" alias="replyVO"/>
+		
+		<typeAlias type="kr.ac.kopo.member.vo.MemberVO" alias="memberVO"/>
+		
+		<typeAlias type="kr.ac.kopo.member.vo.TellerVO" alias="tellerVO"/>
+		
+		<!--  <typeAlias type="kr.ac.kopo.numberTicket.vo.NumberTicketVO" alias="numberTicketVO"/> -->
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.NumberTicket_LatLngVO" alias="numberTicket_LatLngVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.NumberTicket_ServiceVO" alias="numberTicket_ServiceVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.NumberTicket_TellerVO" alias="numberTicket_TellerVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.NumberTicket_NumberTicketVO" alias="numberTicket_NumberTicketVO"/>
+		
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.ServiceDescVO" alias="serviceDescVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.UserTicketVO" alias="userTicketVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.AdminTicketVO" alias="adminTicketVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.AnalysisVO" alias="analysisVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.BasketVO" alias="basketVO"/>
+		<typeAlias type="kr.ac.kopo.numberTicket.vo.PreSubmitVO" alias="preSubmitVO"/>
+		
+		
+	</typeAliases>
+</configuration>

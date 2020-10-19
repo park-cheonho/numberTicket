@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="numberTicket.dao.NumberTicketDAO">
+	<!-- 지도에 마커 찍기 -->
+	<select id="selectLatLng" resultType="numberTicket_LatLngVO">
+		select branch_id, branch_name, branch_address, branch_open, branch_close, latitude as branch_latitude, longitude as branch_longitude
+		from branch
+	</select>
+	
+	<select id="selectBranchList" parameterType="String" resultType="numberTicket_LatLngVO">
+		select branch_id, branch_name, branch_address, branch_open, branch_close, latitude as branch_latitude, longitude as branch_longitude
+		from branch
+		where branch_name = #{location}
+	</select>
+	
+	<select id="selectStandBy100" parameterType="String" resultType="numberTicket_NumberTicketVO">
+		select count(*) as standby,
+			   (count(*)-1)*5 as standbyTime
+		from numberticket
+		where branch_name = #{location} and service_id = 100
+	</select>
+	
+	<select id="selectStandBy200" parameterType="String" resultType="numberTicket_NumberTicketVO">
+		select count(*) as standby,
+			   (count(*)-1)*15 as standbyTime
+		from numberticket
+		where branch_name = #{location} and service_id = 200
+	</select>
+	
+	<select id="selectStandBy300" parameterType="String" resultType="numberTicket_NumberTicketVO">
+		select count(*) as standby,
+			   (count(*)-1)*10 as standbyTime
+		from numberticket
+		where branch_name = #{location} and service_id = 300
+	</select>
+
+	<select id="selectStandBy400" parameterType="String" resultType="numberTicket_NumberTicketVO">
+		select count(*) as standby,
+			   (count(*)-1)*20 as standbyTime
+		from numberticket
+		where branch_name = #{location} and service_id = 400
+	</select>
+
+	<insert id="insertNumberTicket" parameterType="HashMap">
+		insert into numberticket(numberticket_seq, numberticket_number, numberticket_date, numberticket_time, users_id, user_name, branch_name, service_id)		
+		values(seq_numberticket_seq.nextval, seq_numberticket_number.nextval, TO_CHAR(SYSDATE, 'YYYY-MM-DD'), TO_CHAR(SYSDATE, 'HH24:MI:SS'), #{id}, #{name}, #{locations}, #{service})
+	</insert>
+
+	<select id="selectNumberTicket" parameterType="HashMap" resultType="numberTicket_NumberTicketVO">
+		select numberticket_seq, numberticket_number, numberticket_date, numberticket_time, users_id, user_name, branch_name, service_id
+		from numberticket
+		where numberticket_seq=(select max(numberticket_seq) from numberticket where users_id = #{id})
+	</select>
+	
+	<select id="selectService" parameterType="String" resultType="String"> 
+		select service_name
+		from service
+		where service_id = #{service_id}
+	</select>
+	
+	<select id="selectListServiceDesc" resultType="serviceDescVO"> 
+		SELECT 
+			A.SERVICE_ID AS serviceId,
+			B.SERVICE_NAME AS serviceName, 
+			A.seq AS seq, 
+			A.name as name,
+			A.etc as etc,
+			A.service_untact as untact
+		FROM SERVICE_DESC A , SERVICE B
+		WHERE A.SERVICE_ID = B.SERVICE_ID 
+	</select>
+	
+	<select id="userTicket" parameterType="String" resultType="userTicketVO">
+		SELECT
+		    A.BRANCH_NAME as branchName,
+		    A.SERVICE_ID AS serviceId,
+		    B.SERVICE_NAME as serviceName,
+		    A.NUMBERTICKET_SEQ AS numberticketNumber,
+		    A.NUMBERTICKET_DATE as numberticketDate,
+		    A.NUMBERTICKET_TIME as numberticketTime,
+            (SELECT COUNT(*)-1 FROM NUMBERTICKET C WHERE A.SERVICE_ID = C.SERVICE_ID AND A.BRANCH_NAME = C.BRANCH_NAME) AS standby,
+			case 
+                when A.SERVICE_ID = 100 then (SELECT (COUNT(*)-1)*5 FROM NUMBERTICKET C WHERE A.SERVICE_ID = C.SERVICE_ID AND A.BRANCH_NAME = C.BRANCH_NAME)
+                when A.SERVICE_ID = 200 then (SELECT (COUNT(*)-1)*15 FROM NUMBERTICKET C WHERE A.SERVICE_ID = C.SERVICE_ID AND A.BRANCH_NAME = C.BRANCH_NAME)
+                when A.SERVICE_ID = 300 then (SELECT (COUNT(*)-1)*10 FROM NUMBERTICKET C WHERE A.SERVICE_ID = C.SERVICE_ID AND A.BRANCH_NAME = C.BRANCH_NAME)
+                when A.SERVICE_ID = 400 then (SELECT (COUNT(*)-1)*20 FROM NUMBERTICKET C WHERE A.SERVICE_ID = C.SERVICE_ID AND A.BRANCH_NAME = C.BRANCH_NAME)
+            end AS standbyTime
+		FROM NUMBERTICKET A,SERVICE B
+		WHERE A.SERVICE_ID = B.SERVICE_ID
+		AND A.USERS_ID = #{id}
+		ORDER BY A.NUMBERTICKET_DATE desc,A.NUMBERTICKET_TIME desc
+	</select>
+	
+	<select id="adminTicket" parameterType="String" resultType="adminTicketVO">
+		SELECT
+		    E.USERS_NAME as userName,
+		    A.SERVICE_ID AS serviceId,
+		    A.TELLER_ID as tellerId,
+		    B.SERVICE_NAME as serviceName,
+		    A.NUMBERTICKET_NUMBER AS numberticketNumber,
+		    A.NUMBERTICKET_DATE as numberticketDate,
+		    A.NUMBERTICKET_SEQ as numberticketSeq,
+		    A.NUMBERTICKET_TIME as numberticketTime
+		FROM NUMBERTICKET A,SERVICE B,USERS E
+		WHERE A.SERVICE_ID = B.SERVICE_ID
+        AND A.USERS_ID = E.USERS_ID
+		AND A.BRANCH_NAME = (select D.BRANCH_name from TELLER C,BRANCH D where C.BRANCH_ID = D.BRANCH_ID AND C.TELLER_ID =#{tellerId})
+		ORDER BY B.SERVICE_NAME desc,A.NUMBERTICKET_DATE desc,A.NUMBERTICKET_TIME desc
+	</select>
+	
+	<select id="adminTicket100" parameterType="String" resultType="adminTicketVO">
+		SELECT
+		    E.USERS_NAME as userName,
+		    A.SERVICE_ID AS serviceId,
+		    A.TELLER_ID as tellerId,
+		    B.SERVICE_NAME as serviceName,
+		    A.NUMBERTICKET_NUMBER AS numberticketNumber,
+		    A.NUMBERTICKET_DATE as numberticketDate,
+		    A.NUMBERTICKET_SEQ as numberticketSeq,
+		    A.NUMBERTICKET_TIME as numberticketTime
+		FROM NUMBERTICKET A,SERVICE B,USERS E
+		WHERE A.SERVICE_ID = B.SERVICE_ID
+		AND A.SERVICE_ID = '100'
+        AND A.USERS_ID = E.USERS_ID
+		AND A.BRANCH_NAME = (select D.BRANCH_name from TELLER C,BRANCH D where C.BRANCH_ID = D.BRANCH_ID AND C.TELLER_ID =#{tellerId})
+		ORDER BY A.NUMBERTICKET_DATE desc,A.NUMBERTICKET_TIME desc
+	</select>
+	
+		<select id="adminTicket200" parameterType="String" resultType="adminTicketVO">
+		SELECT
+		    E.USERS_NAME as userName,
+		    A.SERVICE_ID AS serviceId,
+		    A.TELLER_ID as tellerId,
+		    B.SERVICE_NAME as serviceName,
+		    A.NUMBERTICKET_NUMBER AS numberticketNumber,
+		    A.NUMBERTICKET_DATE as numberticketDate,
+		    A.NUMBERTICKET_SEQ as numberticketSeq,
+		    A.NUMBERTICKET_TIME as numberticketTime
+		FROM NUMBERTICKET A,SERVICE B,USERS E
+		WHERE A.SERVICE_ID = B.SERVICE_ID
+		AND A.SERVICE_ID = '200'
+        AND A.USERS_ID = E.USERS_ID
+		AND A.BRANCH_NAME = (select D.BRANCH_name from TELLER C,BRANCH D where C.BRANCH_ID = D.BRANCH_ID AND C.TELLER_ID =#{tellerId})
+		ORDER BY A.NUMBERTICKET_DATE desc,A.NUMBERTICKET_TIME desc
+	</select>
+	
+		<select id="adminTicket300" parameterType="String" resultType="adminTicketVO">
+		SELECT
+		    E.USERS_NAME as userName,
+		    A.SERVICE_ID AS serviceId,
+		    A.TELLER_ID as tellerId,
+		    B.SERVICE_NAME as serviceName,
+		    A.NUMBERTICKET_NUMBER AS numberticketNumber,
+		    A.NUMBERTICKET_DATE as numberticketDate,
+		    A.NUMBERTICKET_SEQ as numberticketSeq,
+		    A.NUMBERTICKET_TIME as numberticketTime
+		FROM NUMBERTICKET A,SERVICE B,USERS E
+		WHERE A.SERVICE_ID = B.SERVICE_ID
+		AND A.SERVICE_ID = '300'
+        AND A.USERS_ID = E.USERS_ID
+		AND A.BRANCH_NAME = (select D.BRANCH_name from TELLER C,BRANCH D where C.BRANCH_ID = D.BRANCH_ID AND C.TELLER_ID =#{tellerId})
+		ORDER BY A.NUMBERTICKET_DATE desc,A.NUMBERTICKET_TIME desc
+	</select>
+	
+		<select id="adminTicket400" parameterType="String" resultType="adminTicketVO">
+		SELECT
+		    E.USERS_NAME as userName,
+		    A.SERVICE_ID AS serviceId,
+		    A.TELLER_ID as tellerId,
+		    B.SERVICE_NAME as serviceName,
+		    A.NUMBERTICKET_NUMBER AS numberticketNumber,
+		    A.NUMBERTICKET_DATE as numberticketDate,
+		    A.NUMBERTICKET_SEQ as numberticketSeq,
+		    A.NUMBERTICKET_TIME as numberticketTime
+		FROM NUMBERTICKET A,SERVICE B,USERS E
+		WHERE A.SERVICE_ID = B.SERVICE_ID
+		AND A.SERVICE_ID = '400'
+        AND A.USERS_ID = E.USERS_ID
+		AND A.BRANCH_NAME = (select D.BRANCH_name from TELLER C,BRANCH D where C.BRANCH_ID = D.BRANCH_ID AND C.TELLER_ID =#{tellerId})
+		ORDER BY A.NUMBERTICKET_DATE desc,A.NUMBERTICKET_TIME desc
+	</select>
+	
+	<update id="adminTicketUpdate" parameterType="numberTicket_NumberTicketVO">
+		update NUMBERTICKET set TELLER_ID = #{teller_id} 
+		where NUMBERTICKET_SEQ = #{numberticket_seq}
+	</update>
+	
+	<select id="selectTicket" parameterType="numberTicket_NumberTicketVO" resultType="numberTicket_NumberTicketVO">
+		SELECT
+			*
+		FROM NUMBERTICKET
+		WHERE NUMBERTICKET_SEQ = #{numberticket_seq}
+	</select>
+	
+	<insert id="insertAnalysis" parameterType="analysisVO">
+		INSERT INTO ANALYSIS VALUES (
+		 (SELECT NVL(COUNT(*),0)+1 FROM ANALYSIS) ,
+		 #{analysisNumber},
+		 #{analysisDate, jdbcType=VARCHAR},
+		 #{analysisTime, jdbcType=VARCHAR},
+		 #{usersId , jdbcType=VARCHAR},
+		 #{usersName, jdbcType=VARCHAR},
+		 #{branchId, jdbcType=VARCHAR},
+		 #{tellerId, jdbcType=VARCHAR},
+		 #{serviceId, jdbcType=VARCHAR},
+		 #{branchName, jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<delete id="deleteTicket" parameterType="numberTicket_NumberTicketVO">
+		DELETE FROM NUMBERTICKET WHERE NUMBERTICKET_SEQ = #{numberticket_seq}
+	</delete>
+	
+	<select id="selectAnalysis" parameterType="String" resultType="analysisVO">
+		select 
+    		a.BRANCH_NAME as branchName,
+    		a.SERVICE_ID as serviceId,
+            b.SERVICE_NAME as serviceName,
+    		a.ANALYSIS_NUMBER as analysisNumber,
+    		a.USER_NAME as usersName,
+    		a.TELLER_ID as tellerId,
+    		c.TELLER_NAME as tellerName,
+    		a.ANALYSIS_DATE as analysisDate,
+    		a.ANALYSIS_TIME as analysisTime
+		FROM ANALYSIS a, service b, teller c
+		where BRANCH_NAME = (select D.BRANCH_name from TELLER C,BRANCH D where C.BRANCH_ID = D.BRANCH_ID AND C.TELLER_ID = #{tellerId})
+        and a.service_id = b.SERVICE_ID
+        and a.TELLER_ID = c.TELLER_ID
+		and ANALYSIS_DATE = TO_CHAR(sysdate - 0/24, 'YYYY-MM-DD')
+		ORDER BY A.ANALYSIS_DATE desc,A.ANALYSIS_TIME desc
+	</select>
+	
+	<insert id="insertBasket" parameterType="HashMap">
+		insert into BASKET(USERS_ID, BRANCH_NAME)
+		values (#{id}, #{locations})
+	</insert>
+	
+	<select id="selectBasketList" parameterType="String" resultType="basketVO">
+		select USERS_ID as userId, BRANCH_NAME as branchName
+		from BASKET
+		where USERS_ID = #{id}
+	</select>
+	
+	<select id="selectAnalysisTotal" parameterType="String" resultType="analysisVO">
+		select count(*) as todayTotal
+		from ANALYSIS
+		where analysis_date = TO_CHAR(sysdate - 0/24, 'YYYY-MM-DD')
+		and BRANCH_NAME = #{locations}
+	</select>
+	
+	<select id="selectAnalysis100" parameterType="String" resultType="analysisVO">
+		select count(*) as today100
+		from ANALYSIS 
+		where SERVICE_ID = 100
+		and analysis_date = TO_CHAR(sysdate - 0/24, 'YYYY-MM-DD')
+		and BRANCH_NAME = #{locations}      
+	</select>
+	
+	<select id="selectAnalysis200" parameterType="String" resultType="analysisVO">
+		select count(*) as today200
+		from ANALYSIS 
+		where SERVICE_ID = 200
+		and analysis_date = TO_CHAR(sysdate - 0/24, 'YYYY-MM-DD')
+		and BRANCH_NAME = #{locations}      
+	</select>
+	
+	<select id="selectAnalysis300" parameterType="String" resultType="analysisVO">
+		select count(*) as today300
+		from ANALYSIS 
+		where SERVICE_ID = 300
+		and analysis_date = TO_CHAR(sysdate - 0/24, 'YYYY-MM-DD')
+		and BRANCH_NAME = #{locations}      
+	</select>
+	
+	<select id="selectAnalysis400" parameterType="String" resultType="analysisVO">
+		select count(*) as today400
+		from ANALYSIS 
+		where SERVICE_ID = 400
+		and analysis_date = TO_CHAR(sysdate - 0/24, 'YYYY-MM-DD')
+		and BRANCH_NAME = #{locations}      
+	</select>
+	
+	<select id="selectWeekVisit" parameterType="String" resultType="analysisVO">
+		select count(*) as visit, analysis_date as analysisDate
+  		from analysis
+ 		WHERE ANALYSIS_DATE >= TO_CHAR(SYSDATE-6,'YYYY-MM-DD')
+ 		and BRANCH_NAME = #{locations} 
+ 		group by analysis_date
+	</select>
+	
+	<insert id="insertPreSubmit" parameterType="HashMap">
+		insert into PRESUBMIT(
+			USERS_ID,
+   			PRESUBMIT_BANKNAME,
+    	 	PRESUBMIT_INPUTACCOUNTNUMBER,
+    	 	PRESUBMIT_CASHINPUT,
+    		PRESUBMIT_CHECKINPUT,
+    		PRESUBMIT_MEMO,
+    		SERVICE_ID,
+    		SERVICE_NAME,
+    		BRANCH_NAME,
+    		NUMBERTICKET_NUMBER
+    		)
+    	values(#{userId},#{preSubmitBankName},#{preSubmitInputAccountNumber},#{preSubmitCashInput},#{preSubmitCheckInput},#{preSubmitMemo},#{serviceId},#{serviceName},#{branchName},#{numberticketNumber})
+	</insert>
+	
+	<select id="selectAllPre" resultType="preSubmitVO">
+		select 
+    		USERS_ID as userId,
+    		PRESUBMIT_BANKNAME as preSubmitBranchName,
+    		PRESUBMIT_INPUTACCOUNTNUMBER as preSubmitInputAccountNumber,
+    		PRESUBMIT_CASHINPUT as preSubmitCashInput,
+    		PRESUBMIT_CHECKINPUT as preSubmitCheckInput,
+    		PRESUBMIT_MEMO as preSubmitMemo,
+    		SERVICE_ID as serviceId,
+    		SERVICE_NAME as serviceName,
+    		BRANCH_NAME as branchName,
+    		NUMBERTICKET_NUMBER as numberticketNumber
+		from PRESUBMIT
+		where BRANCH_NAME = #{locations}
+	
+	</select>
+		
+	<select id="selectDetailByNo" resultType="preSubmitVO">
+		select 
+    		USERS_ID as userId,
+    		PRESUBMIT_BANKNAME as preSubmitBankName,
+    		PRESUBMIT_INPUTACCOUNTNUMBER as preSubmitInputAccountNumber,
+    		PRESUBMIT_CASHINPUT as preSubmitCashInput,
+    		PRESUBMIT_CHECKINPUT as preSubmitCheckInput,
+    		PRESUBMIT_MEMO as preSubmitMemo,
+    		SERVICE_ID as serviceId,
+    		SERVICE_NAME as serviceName,
+    		BRANCH_NAME as branchName,
+    		NUMBERTICKET_NUMBER as numberticketNumber
+		from PRESUBMIT
+		where BRANCH_NAME = #{branchName}
+		and NUMBERTICKET_NUMBER = #{numberticketNumber}	
+	</select>
+</mapper>
